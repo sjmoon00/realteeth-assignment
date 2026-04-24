@@ -12,6 +12,11 @@ public class GlobalExceptionHandler {
     @ExceptionHandler(BaseException.class)
     public ResponseEntity<ErrorResponse> handleBaseException(BaseException e) {
         ErrorCode errorCode = e.getErrorCode();
+        if (errorCode.getStatus().is5xxServerError()) {
+            log.error("Server error: {}", errorCode.getMessage(), e);
+        } else {
+            log.warn("Client error: {}", errorCode.getMessage());
+        }
         return ResponseEntity
                 .status(errorCode.getStatus())
                 .body(ErrorResponse.of(errorCode));
