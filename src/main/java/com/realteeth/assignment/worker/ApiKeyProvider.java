@@ -7,6 +7,7 @@ import org.springframework.context.event.EventListener;
 import org.springframework.stereotype.Component;
 import org.springframework.web.reactive.function.client.WebClient;
 
+import java.time.Duration;
 import java.util.Map;
 
 @Slf4j
@@ -27,11 +28,11 @@ public class ApiKeyProvider {
         );
 
         Map<?, ?> response = client.post()
-                .uri("/auth/issue-key")
+                .uri("auth/issue-key")
                 .bodyValue(requestBody)
                 .retrieve()
                 .bodyToMono(Map.class)
-                .block();
+                .block(Duration.ofSeconds(10));
 
         if (response == null || !response.containsKey("apiKey")) {
             throw new IllegalStateException("Mock Worker API Key 발급 실패: 응답에 apiKey 없음");
