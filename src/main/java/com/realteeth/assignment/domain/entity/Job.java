@@ -30,10 +30,10 @@ public class Job {
     private UUID jobId;
 
     @Enumerated(EnumType.STRING)
-    @Column(nullable = false)
+    @Column(nullable = false, length = 20)
     private JobStatus status;
 
-    @Column(name = "request_hash", nullable = false)
+    @Column(name = "request_hash", nullable = false, length = 64)
     private String requestHash;
 
     @Column(name = "image_url", length = 2048)
