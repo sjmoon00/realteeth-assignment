@@ -1,0 +1,14 @@
+spring:
+  jpa:
+    hibernate:
+      ddl-auto: validate
+    properties:
+      hibernate:
+        dialect: org.hibernate.dialect.MySQLDialect
+  flyway:
+    enabled: true
+
+mock-worker:
+  base-url: https://dev.realteeth.ai/mock
+  candidate-name: test
+  email: test@test.com
