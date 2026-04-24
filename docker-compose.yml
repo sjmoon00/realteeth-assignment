@@ -7,7 +7,7 @@ services:
       MYSQL_USER: assignment
       MYSQL_PASSWORD: assignment
     healthcheck:
-      test: ["CMD", "mysqladmin", "ping", "-h", "localhost"]
+      test: ["CMD", "mysqladmin", "ping", "-h", "localhost", "-uroot", "-p$$MYSQL_ROOT_PASSWORD"]
       interval: 5s
       timeout: 5s
       retries: 10
@@ -20,8 +20,8 @@ services:
       SPRING_DATASOURCE_URL: jdbc:mysql://db:3306/assignment?useSSL=false&allowPublicKeyRetrieval=true&serverTimezone=UTC
       SPRING_DATASOURCE_USERNAME: assignment
       SPRING_DATASOURCE_PASSWORD: assignment
-      MOCK_WORKER_CANDIDATE_NAME: ${MOCK_WORKER_CANDIDATE_NAME}
-      MOCK_WORKER_EMAIL: ${MOCK_WORKER_EMAIL}
+      MOCK_WORKER_CANDIDATE_NAME: ${MOCK_WORKER_CANDIDATE_NAME:?MOCK_WORKER_CANDIDATE_NAME must be set}
+      MOCK_WORKER_EMAIL: ${MOCK_WORKER_EMAIL:?MOCK_WORKER_EMAIL must be set}
     depends_on:
       db:
         condition: service_healthy
