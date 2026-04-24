@@ -20,10 +20,14 @@ public interface JobRepository extends JpaRepository<Job, Long> {
 
     @Query(value = """
             SELECT * FROM jobs
-            WHERE status = 'PENDING'
+            WHERE status = :status
             ORDER BY created_at
             LIMIT :limit
             FOR UPDATE SKIP LOCKED
             """, nativeQuery = true)
-    List<Job> findPendingJobsForUpdate(@Param("limit") int limit);
+    List<Job> findPendingJobsForUpdate(@Param("status") String status, @Param("limit") int limit);
+
+    default List<Job> findPendingJobsForUpdate(int limit) {
+        return findPendingJobsForUpdate(JobStatus.PENDING.name(), limit);
+    }
 }
