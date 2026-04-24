@@ -1,4 +1,4 @@
-package com.realteeth.assignment.domain;
+package com.realteeth.assignment;
 
 import org.springframework.boot.test.context.TestConfiguration;
 import org.springframework.boot.testcontainers.service.connection.ServiceConnection;
