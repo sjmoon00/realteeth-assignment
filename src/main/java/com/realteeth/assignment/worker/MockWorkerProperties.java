@@ -14,4 +14,5 @@ public class MockWorkerProperties {
     private String baseUrl;
     private String candidateName;
     private String email;
+    private int readTimeoutSeconds = 60;
 }

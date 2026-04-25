@@ -3,7 +3,7 @@ package com.realteeth.assignment.worker;
 import com.realteeth.assignment.exception.ErrorCode;
 import com.realteeth.assignment.exception.MockWorkerException;
 import io.github.resilience4j.circuitbreaker.annotation.CircuitBreaker;
-import lombok.RequiredArgsConstructor;
+import jakarta.annotation.PostConstruct;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.http.HttpStatusCode;
 import org.springframework.stereotype.Service;
@@ -16,7 +16,6 @@ import java.time.Duration;
 
 @Slf4j
 @Service
-@RequiredArgsConstructor
 public class MockWorkerClient {
 
     private static final String CIRCUIT_BREAKER_NAME = "mockWorker";
@@ -25,6 +24,20 @@ public class MockWorkerClient {
     private final MockWorkerProperties properties;
     private final ApiKeyProvider apiKeyProvider;
     private final WebClient.Builder webClientBuilder;
+    private WebClient webClient;
+
+    public MockWorkerClient(MockWorkerProperties properties,
+                            ApiKeyProvider apiKeyProvider,
+                            WebClient.Builder webClientBuilder) {
+        this.properties = properties;
+        this.apiKeyProvider = apiKeyProvider;
+        this.webClientBuilder = webClientBuilder;
+    }
+
+    @PostConstruct
+    void init() {
+        this.webClient = webClientBuilder.build();
+    }
 
     public record ProcessStartResponse(String jobId, String status) {}
 
@@ -40,7 +53,7 @@ public class MockWorkerClient {
 
     @CircuitBreaker(name = CIRCUIT_BREAKER_NAME, fallbackMethod = "submitJobFallback")
     public ProcessStartResponse submitJob(String imageUrl) {
-        return buildClient()
+        return client()
                 .post()
                 .uri("/process")
                 .bodyValue(new SubmitRequest(imageUrl))
@@ -67,7 +80,7 @@ public class MockWorkerClient {
 
     @CircuitBreaker(name = CIRCUIT_BREAKER_NAME, fallbackMethod = "getJobStatusFallback")
     public ProcessStatusResponse getJobStatus(String workerJobId) {
-        return buildClient()
+        return client()
                 .get()
                 .uri("/process/{jobId}", workerJobId)
                 .retrieve()
@@ -103,8 +116,8 @@ public class MockWorkerClient {
         throw new MockWorkerException(ErrorCode.MOCK_WORKER_ERROR, t);
     }
 
-    private WebClient buildClient() {
-        return webClientBuilder
+    private WebClient client() {
+        return webClient.mutate()
                 .baseUrl(properties.getBaseUrl())
                 .defaultHeader("X-API-KEY", apiKeyProvider.getApiKey())
                 .build();

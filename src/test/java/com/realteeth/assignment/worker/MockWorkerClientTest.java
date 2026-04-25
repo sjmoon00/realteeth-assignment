@@ -17,6 +17,7 @@ import org.springframework.context.annotation.Import;
 import org.springframework.test.context.bean.override.mockito.MockitoBean;
 
 import java.io.IOException;
+import java.util.concurrent.TimeUnit;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
@@ -28,7 +29,8 @@ import static org.mockito.Mockito.when;
                 MockWorkerProperties.class,
                 WebClientConfig.class
         },
-        webEnvironment = SpringBootTest.WebEnvironment.NONE
+        webEnvironment = SpringBootTest.WebEnvironment.NONE,
+        properties = "mock-worker.read-timeout-seconds=2"
 )
 @Import(CircuitBreakerAutoConfiguration.class)
 @EnableAspectJAutoProxy
@@ -236,5 +238,18 @@ class MockWorkerClientTest {
 
         assertThat(response.status()).isEqualTo("COMPLETED");
         assertThat(response.result()).isNull();
+    }
+
+    // ==================== 읽기 타임아웃 ====================
+
+    @Test
+    void submitJob_읽기_타임아웃_초과시_MockWorkerException이_발생한다() {
+        server.enqueue(new MockResponse()
+                .setBody("{\"jobId\":\"worker-001\",\"status\":\"PROCESSING\"}")
+                .addHeader("Content-Type", "application/json")
+                .setBodyDelay(3, TimeUnit.SECONDS));
+
+        assertThatThrownBy(() -> mockWorkerClient.submitJob("https://example.com/img.jpg"))
+                .isInstanceOf(MockWorkerException.class);
     }
 }

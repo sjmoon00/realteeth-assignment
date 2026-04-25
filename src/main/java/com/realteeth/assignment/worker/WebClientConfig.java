@@ -12,11 +12,17 @@ import java.time.Duration;
 @Configuration
 public class WebClientConfig {
 
+    private final MockWorkerProperties properties;
+
+    public WebClientConfig(MockWorkerProperties properties) {
+        this.properties = properties;
+    }
+
     @Bean
     public WebClient.Builder webClientBuilder() {
         HttpClient httpClient = HttpClient.create()
                 .option(ChannelOption.CONNECT_TIMEOUT_MILLIS, 5_000)
-                .responseTimeout(Duration.ofSeconds(60));
+                .responseTimeout(Duration.ofSeconds(properties.getReadTimeoutSeconds()));
 
         return WebClient.builder()
                 .clientConnector(new ReactorClientHttpConnector(httpClient));
