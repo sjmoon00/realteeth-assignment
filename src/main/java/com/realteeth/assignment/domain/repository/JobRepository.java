@@ -2,6 +2,8 @@ package com.realteeth.assignment.domain.repository;
 
 import com.realteeth.assignment.domain.entity.Job;
 import com.realteeth.assignment.domain.enums.JobStatus;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.Pageable;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.query.Param;
@@ -17,6 +19,8 @@ public interface JobRepository extends JpaRepository<Job, Long> {
     List<Job> findByRequestHash(String requestHash);
 
     List<Job> findByStatus(JobStatus status);
+
+    Page<Job> findByStatus(JobStatus status, Pageable pageable);
 
     @Query(value = """
             SELECT * FROM jobs
