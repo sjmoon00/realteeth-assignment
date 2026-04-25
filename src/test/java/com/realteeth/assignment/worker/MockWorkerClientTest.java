@@ -1,7 +1,6 @@
 package com.realteeth.assignment.worker;
 
 import com.realteeth.assignment.exception.MockWorkerException;
-import io.github.resilience4j.circuitbreaker.CircuitBreaker;
 import io.github.resilience4j.circuitbreaker.CircuitBreakerRegistry;
 import io.github.resilience4j.springboot3.circuitbreaker.autoconfigure.CircuitBreakerAutoConfiguration;
 import okhttp3.mockwebserver.MockResponse;
