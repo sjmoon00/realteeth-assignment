@@ -11,13 +11,14 @@ import org.springframework.boot.data.jpa.test.autoconfigure.DataJpaTest;
 import java.util.List;
 import java.util.Optional;
 import org.springframework.boot.jdbc.test.autoconfigure.AutoConfigureTestDatabase;
+import com.realteeth.assignment.JpaAuditingConfig;
 import com.realteeth.assignment.MySQLTestConfig;
 import org.springframework.context.annotation.Import;
 
 import static org.assertj.core.api.Assertions.assertThat;
 
 @DataJpaTest
-@Import(MySQLTestConfig.class)
+@Import({MySQLTestConfig.class, JpaAuditingConfig.class})
 @AutoConfigureTestDatabase(replace = AutoConfigureTestDatabase.Replace.NONE)
 class JobRepositoryTest {
 
