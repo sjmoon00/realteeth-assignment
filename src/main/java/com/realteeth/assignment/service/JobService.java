@@ -28,6 +28,9 @@ public class JobService {
 
     @Transactional
     public JobSubmitResult submitJob(String imageUrl) {
+        if (imageUrl == null || imageUrl.isBlank()) {
+            throw new JobException(ErrorCode.INVALID_JOB_REQUEST);
+        }
         String hash = calculateHash(imageUrl);
 
         List<Job> existing = jobRepository.findByRequestHash(hash);

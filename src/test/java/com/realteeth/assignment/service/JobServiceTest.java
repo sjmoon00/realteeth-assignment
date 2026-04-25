@@ -24,8 +24,9 @@ import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.anyString;
 import static org.mockito.BDDMockito.given;
-import static org.mockito.Mockito.never;
-import static org.mockito.Mockito.verify;
+import static org.mockito.Mockito.*;
+
+import org.mockito.ArgumentCaptor;
 
 @ExtendWith(MockitoExtension.class)
 class JobServiceTest {
@@ -106,18 +107,33 @@ class JobServiceTest {
     }
 
     @Test
-    void submitJob은_동일한_imageUrl에_대해_동일한_해시를_생성한다() {
-        Job saved1 = Job.create(IMAGE_URL, "hash");
-        Job saved2 = Job.create(IMAGE_URL, "hash");
+    void submitJob은_동일한_imageUrl에_대해_동일한_해시로_조회한다() {
         given(jobRepository.findByRequestHash(anyString())).willReturn(List.of());
-        given(jobRepository.save(any(Job.class))).willReturn(saved1, saved2);
+        given(jobRepository.save(any(Job.class))).willReturn(Job.create(IMAGE_URL, "hash"));
 
         jobService.submitJob(IMAGE_URL);
         jobService.submitJob(IMAGE_URL);
 
-        // 두 번 호출 시 동일한 hash로 findByRequestHash 호출됨을 캡처로 확인 가능
-        // 여기서는 save가 두 번 호출됐음(FAILED 없으면 매번 빈 리스트 반환되므로)을 확인
-        verify(jobRepository, org.mockito.Mockito.times(2)).save(any(Job.class));
+        ArgumentCaptor<String> hashCaptor = ArgumentCaptor.forClass(String.class);
+        verify(jobRepository, times(2)).findByRequestHash(hashCaptor.capture());
+        List<String> hashes = hashCaptor.getAllValues();
+        assertThat(hashes.get(0)).isEqualTo(hashes.get(1));
+    }
+
+    @Test
+    void submitJob은_imageUrl이_null이면_INVALID_JOB_REQUEST_예외를_던진다() {
+        assertThatThrownBy(() -> jobService.submitJob(null))
+                .isInstanceOf(JobException.class)
+                .satisfies(e -> assertThat(((JobException) e).getErrorCode())
+                        .isEqualTo(ErrorCode.INVALID_JOB_REQUEST));
+    }
+
+    @Test
+    void submitJob은_imageUrl이_빈_값이면_INVALID_JOB_REQUEST_예외를_던진다() {
+        assertThatThrownBy(() -> jobService.submitJob(""))
+                .isInstanceOf(JobException.class)
+                .satisfies(e -> assertThat(((JobException) e).getErrorCode())
+                        .isEqualTo(ErrorCode.INVALID_JOB_REQUEST));
     }
 
     @Test
