@@ -21,3 +21,21 @@ mock-worker:
   base-url: https://dev.realteeth.ai/mock
   candidate-name: ${MOCK_WORKER_CANDIDATE_NAME}
   email: ${MOCK_WORKER_EMAIL}
+
+resilience4j:
+  circuitbreaker:
+    instances:
+      mockWorker:
+        failure-rate-threshold: 50
+        wait-duration-in-open-state: 10s
+        sliding-window-type: COUNT_BASED
+        sliding-window-size: 10
+        minimum-number-of-calls: 5
+        permitted-number-of-calls-in-half-open-state: 3
+  retry:
+    instances:
+      mockWorker:
+        max-attempts: 3
+        wait-duration: 500ms
+        retry-exceptions:
+          - com.realteeth.assignment.worker.MockWorkerClient$RetryableException
