@@ -239,6 +239,30 @@ class MockWorkerClientTest {
         assertThat(response.result()).isNull();
     }
 
+    // ==================== JSON 역직렬화 오류 ====================
+
+    @Test
+    void submitJob_잘못된_JSON_응답시_MockWorkerException이_발생한다() {
+        server.enqueue(new MockResponse()
+                .setResponseCode(200)
+                .setBody("{\"jobId\":")
+                .addHeader("Content-Type", "application/json"));
+
+        assertThatThrownBy(() -> mockWorkerClient.submitJob("https://example.com/img.jpg"))
+                .isInstanceOf(MockWorkerException.class);
+    }
+
+    @Test
+    void getJobStatus_잘못된_JSON_응답시_MockWorkerException이_발생한다() {
+        server.enqueue(new MockResponse()
+                .setResponseCode(200)
+                .setBody("{\"jobId\":")
+                .addHeader("Content-Type", "application/json"));
+
+        assertThatThrownBy(() -> mockWorkerClient.getJobStatus("worker-001"))
+                .isInstanceOf(MockWorkerException.class);
+    }
+
     // ==================== 읽기 타임아웃 ====================
 
     @Test
