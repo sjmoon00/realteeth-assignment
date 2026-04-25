@@ -32,10 +32,3 @@ resilience4j:
         sliding-window-size: 10
         minimum-number-of-calls: 5
         permitted-number-of-calls-in-half-open-state: 3
-  retry:
-    instances:
-      mockWorker:
-        max-attempts: 3
-        wait-duration: 500ms
-        retry-exceptions:
-          - com.realteeth.assignment.worker.MockWorkerClient$RetryableException
