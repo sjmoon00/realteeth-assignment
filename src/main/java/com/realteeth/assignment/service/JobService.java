@@ -16,6 +16,7 @@ import java.security.MessageDigest;
 import java.security.NoSuchAlgorithmException;
 import java.util.HexFormat;
 import java.util.List;
+import java.util.Optional;
 import java.util.UUID;
 
 @Service
@@ -30,14 +31,11 @@ public class JobService {
         String hash = calculateHash(imageUrl);
 
         List<Job> existing = jobRepository.findByRequestHash(hash);
-        boolean hasActive = existing.stream()
-                .anyMatch(j -> j.getStatus() != JobStatus.FAILED);
-        if (hasActive) {
-            Job activeJob = existing.stream()
-                    .filter(j -> j.getStatus() != JobStatus.FAILED)
-                    .findFirst()
-                    .orElseThrow();
-            return new JobSubmitResult(activeJob, false);
+        Optional<Job> activeJob = existing.stream()
+                .filter(j -> j.getStatus() != JobStatus.FAILED)
+                .findFirst();
+        if (activeJob.isPresent()) {
+            return new JobSubmitResult(activeJob.get(), false);
         }
 
         Job job = jobRepository.save(Job.create(imageUrl, hash));
