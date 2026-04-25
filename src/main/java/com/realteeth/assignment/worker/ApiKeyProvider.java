@@ -25,13 +25,13 @@ public class ApiKeyProvider {
                 .build();
 
         AuthResponse response = client.post()
-                .uri("auth/issue-key")
+                .uri("/auth/issue-key")
                 .bodyValue(new IssueKeyRequest(properties.getCandidateName(), properties.getEmail()))
                 .retrieve()
                 .bodyToMono(AuthResponse.class)
                 .block(Duration.ofSeconds(10));
 
-        if (response == null || response.apiKey() == null) {
+        if (response == null || response.apiKey() == null || response.apiKey().isBlank()) {
             throw new IllegalStateException("Mock Worker API Key 발급 실패: 응답에 apiKey 없음");
         }
 
