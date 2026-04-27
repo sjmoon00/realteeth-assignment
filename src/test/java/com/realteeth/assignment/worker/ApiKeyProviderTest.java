@@ -11,7 +11,6 @@ import org.springframework.web.reactive.function.client.WebClient;
 import java.io.IOException;
 
 import static org.assertj.core.api.Assertions.assertThat;
-import static org.assertj.core.api.Assertions.assertThatThrownBy;
 
 class ApiKeyProviderTest {
 
@@ -53,41 +52,45 @@ class ApiKeyProviderTest {
     }
 
     @Test
-    void apiKey가_null인_응답시_예외가_발생한다() {
+    void apiKey가_null인_응답시_apiKey가_null로_유지된다() {
         server.enqueue(new MockResponse()
                 .setBody("{\"apiKey\":null}")
                 .addHeader("Content-Type", "application/json"));
 
-        assertThatThrownBy(() -> apiKeyProvider.issueApiKey())
-                .isInstanceOf(IllegalStateException.class);
+        apiKeyProvider.issueApiKey();
+
+        assertThat(apiKeyProvider.getApiKey()).isNull();
     }
 
     @Test
-    void apiKey가_빈_문자열인_응답시_예외가_발생한다() {
+    void apiKey가_빈_문자열인_응답시_apiKey가_null로_유지된다() {
         server.enqueue(new MockResponse()
                 .setBody("{\"apiKey\":\"\"}")
                 .addHeader("Content-Type", "application/json"));
 
-        assertThatThrownBy(() -> apiKeyProvider.issueApiKey())
-                .isInstanceOf(IllegalStateException.class);
+        apiKeyProvider.issueApiKey();
+
+        assertThat(apiKeyProvider.getApiKey()).isNull();
     }
 
     @Test
-    void apiKey가_공백만_있는_응답시_예외가_발생한다() {
+    void apiKey가_공백만_있는_응답시_apiKey가_null로_유지된다() {
         server.enqueue(new MockResponse()
                 .setBody("{\"apiKey\":\"   \"}")
                 .addHeader("Content-Type", "application/json"));
 
-        assertThatThrownBy(() -> apiKeyProvider.issueApiKey())
-                .isInstanceOf(IllegalStateException.class);
+        apiKeyProvider.issueApiKey();
+
+        assertThat(apiKeyProvider.getApiKey()).isNull();
     }
 
     @Test
-    void 서버_오류시_예외가_발생한다() {
+    void 서버_오류시_apiKey가_null로_유지된다() {
         server.enqueue(new MockResponse().setResponseCode(500));
 
-        assertThatThrownBy(() -> apiKeyProvider.issueApiKey())
-                .isInstanceOf(Exception.class);
+        apiKeyProvider.issueApiKey();
+
+        assertThat(apiKeyProvider.getApiKey()).isNull();
     }
 
     @Test
@@ -102,5 +105,46 @@ class ApiKeyProviderTest {
         String body = request.getBody().readUtf8();
         assertThat(body).contains("tester");
         assertThat(body).contains("tester@test.com");
+    }
+
+    @Test
+    void refresh_정상_응답시_apiKey를_갱신하고_true를_반환한다() {
+        server.enqueue(new MockResponse()
+                .setBody("{\"apiKey\":\"new-key-123\"}")
+                .addHeader("Content-Type", "application/json"));
+
+        boolean result = apiKeyProvider.refresh();
+
+        assertThat(result).isTrue();
+        assertThat(apiKeyProvider.getApiKey()).isEqualTo("new-key-123");
+    }
+
+    @Test
+    void refresh_서버_오류시_false를_반환하고_기존_키를_유지한다() {
+        server.enqueue(new MockResponse()
+                .setBody("{\"apiKey\":\"old-key\"}")
+                .addHeader("Content-Type", "application/json"));
+        apiKeyProvider.issueApiKey();
+
+        server.enqueue(new MockResponse().setResponseCode(500));
+
+        boolean result = apiKeyProvider.refresh();
+
+        assertThat(result).isFalse();
+        assertThat(apiKeyProvider.getApiKey()).isEqualTo("old-key");
+    }
+
+    @Test
+    void refresh_성공시_기존_null_apiKey가_갱신된다() {
+        assertThat(apiKeyProvider.getApiKey()).isNull();
+
+        server.enqueue(new MockResponse()
+                .setBody("{\"apiKey\":\"recovered-key\"}")
+                .addHeader("Content-Type", "application/json"));
+
+        boolean result = apiKeyProvider.refresh();
+
+        assertThat(result).isTrue();
+        assertThat(apiKeyProvider.getApiKey()).isEqualTo("recovered-key");
     }
 }
