@@ -34,4 +34,8 @@ public interface JobRepository extends JpaRepository<Job, Long> {
     default List<Job> findPendingJobsForUpdate(int limit) {
         return findPendingJobsForUpdate(JobStatus.PENDING.name(), limit);
     }
+
+    default List<Job> findProcessingJobsForUpdate(int limit) {
+        return findPendingJobsForUpdate(JobStatus.PROCESSING.name(), limit);
+    }
 }
