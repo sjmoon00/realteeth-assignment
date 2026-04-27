@@ -26,7 +26,7 @@ public class JobDispatcher {
             try {
                 jobDispatchProcessor.dispatchOne(job.getId());
             } catch (Exception e) {
-                log.error("잡 디스패치 중 예외 발생 (jobId={}): {}", job.getJobId(), e.getMessage(), e);
+                log.error("잡 디스패치 중 예외 발생 (id={}, jobId={}): {}", job.getId(), job.getJobId(), e.getMessage(), e);
             }
         }
     }
