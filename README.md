@@ -38,6 +38,14 @@ docker compose up --build
 - 앱 포트: `8080`
 - Swagger UI: http://localhost:8080/swagger-ui/index.html
 
+### 테스트
+
+```bash
+./gradlew test
+```
+
+Repository 테스트에서 Testcontainers로 MySQL 컨테이너를 자동 실행하므로, Docker Desktop이 실행 중이어야 합니다.
+
 ---
 
 ## API 명세
