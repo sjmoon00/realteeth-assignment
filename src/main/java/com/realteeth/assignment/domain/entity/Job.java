@@ -82,6 +82,7 @@ public class Job {
         this.errorMessage = errorMessage;
     }
 
+    // 서버 재시작 복구 전용 — 정상 전이 규칙(transitionTo)을 의도적으로 우회
     public void resetToPending() {
         if (this.status != JobStatus.PROCESSING) {
             throw new JobException(ErrorCode.INVALID_STATE_TRANSITION);

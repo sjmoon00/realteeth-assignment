@@ -31,7 +31,10 @@ public class JobRecoveryService {
         }
 
         if (!processingJobs.isEmpty()) {
-            log.info("서버 재시작 복구: PROCESSING 잡 {}건을 PENDING으로 리셋", processingJobs.size());
+            List<String> jobIds = processingJobs.stream()
+                    .map(job -> job.getJobId().toString())
+                    .toList();
+            log.info("서버 재시작 복구: PROCESSING 잡 {}건을 PENDING으로 리셋 {}", processingJobs.size(), jobIds);
         }
     }
 }
