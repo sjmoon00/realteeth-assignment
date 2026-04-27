@@ -55,32 +55,22 @@ public class MockWorkerClient {
         }
     }
 
+    private static class ApiKeyExpiredException extends RuntimeException {
+        ApiKeyExpiredException() {
+            super("API Key 만료 (401)");
+        }
+    }
+
     @CircuitBreaker(name = CIRCUIT_BREAKER_NAME, fallbackMethod = "submitJobFallback")
     public ProcessStartResponse submitJob(String imageUrl) {
-        return client()
-                .post()
-                .uri("/process")
-                .contentType(MediaType.APPLICATION_JSON)
-                .bodyValue(new SubmitRequest(imageUrl))
-                .retrieve()
-                .onStatus(HttpStatusCode::is4xxClientError, response -> {
-                    if (response.statusCode().value() == 429) {
-                        return Mono.error(new RetryableException("429 Too Many Requests", null));
-                    }
-                    return Mono.error(new MockWorkerException(ErrorCode.MOCK_WORKER_ERROR));
-                })
-                .onStatus(HttpStatusCode::is5xxServerError, response ->
-                        Mono.error(new RetryableException("5xx Server Error", null))
-                )
-                .bodyToMono(ProcessStartResponse.class)
-                .switchIfEmpty(Mono.error(new MockWorkerException(ErrorCode.MOCK_WORKER_ERROR)))
-                .onErrorMap(WebClientRequestException.class, e -> new RetryableException("네트워크 오류", e))
-                .retryWhen(Retry.fixedDelay(MAX_RETRY_ATTEMPTS, Duration.ofMillis(500))
-                        .filter(e -> e instanceof RetryableException))
-                .onErrorMap(RetryableException.class, e -> new MockWorkerException(ErrorCode.MOCK_WORKER_ERROR, e))
-                .onErrorMap(e -> !(e instanceof MockWorkerException),
-                        e -> new MockWorkerException(ErrorCode.MOCK_WORKER_ERROR, e))
-                .block(Duration.ofSeconds(65));
+        try {
+            return doSubmitJob(imageUrl);
+        } catch (ApiKeyExpiredException e) {
+            if (apiKeyProvider.refresh()) {
+                return doSubmitJob(imageUrl);
+            }
+            throw new MockWorkerException(ErrorCode.MOCK_WORKER_ERROR);
+        }
     }
 
     @CircuitBreaker(name = CIRCUIT_BREAKER_NAME, fallbackMethod = "getJobStatusFallback")
@@ -125,10 +115,58 @@ public class MockWorkerClient {
         throw new MockWorkerException(ErrorCode.MOCK_WORKER_ERROR, t);
     }
 
+    private ProcessStartResponse doSubmitJob(String imageUrl) {
+        return authenticatedClient()
+                .post()
+                .uri("/process")
+                .contentType(MediaType.APPLICATION_JSON)
+                .bodyValue(new SubmitRequest(imageUrl))
+                .retrieve()
+                .onStatus(HttpStatusCode::is4xxClientError, response -> {
+                    if (response.statusCode().value() == 401) {
+                        return Mono.error(new ApiKeyExpiredException());
+                    }
+                    if (response.statusCode().value() == 429) {
+                        return Mono.error(new RetryableException("429 Too Many Requests", null));
+                    }
+                    return Mono.error(new MockWorkerException(ErrorCode.MOCK_WORKER_ERROR));
+                })
+                .onStatus(HttpStatusCode::is5xxServerError, response ->
+                        Mono.error(new RetryableException("5xx Server Error", null))
+                )
+                .bodyToMono(ProcessStartResponse.class)
+                .switchIfEmpty(Mono.error(new MockWorkerException(ErrorCode.MOCK_WORKER_ERROR)))
+                .onErrorMap(WebClientRequestException.class, e -> new RetryableException("네트워크 오류", e))
+                .retryWhen(Retry.fixedDelay(MAX_RETRY_ATTEMPTS, Duration.ofMillis(500))
+                        .filter(e -> e instanceof RetryableException))
+                .onErrorMap(RetryableException.class, e -> new MockWorkerException(ErrorCode.MOCK_WORKER_ERROR, e))
+                .onErrorMap(e -> !(e instanceof MockWorkerException) && !(e instanceof ApiKeyExpiredException),
+                        e -> new MockWorkerException(ErrorCode.MOCK_WORKER_ERROR, e))
+                .block(Duration.ofSeconds(65));
+    }
+
+    // POST /mock/process — X-API-KEY 인증 필요
+    private WebClient authenticatedClient() {
+        String key = apiKeyProvider.getApiKey();
+        if (key == null) {
+            if (!apiKeyProvider.refresh()) {
+                throw new MockWorkerException(ErrorCode.MOCK_WORKER_ERROR);
+            }
+            key = apiKeyProvider.getApiKey();
+            if (key == null) {
+                throw new MockWorkerException(ErrorCode.MOCK_WORKER_ERROR);
+            }
+        }
+        return webClient.mutate()
+                .baseUrl(properties.getBaseUrl())
+                .defaultHeader("X-API-KEY", key)
+                .build();
+    }
+
+    // GET /mock/process/{id} — 인증 불필요
     private WebClient client() {
         return webClient.mutate()
                 .baseUrl(properties.getBaseUrl())
-                .defaultHeader("X-API-KEY", apiKeyProvider.getApiKey())
                 .build();
     }
 }
