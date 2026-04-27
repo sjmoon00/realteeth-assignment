@@ -12,6 +12,7 @@ import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
+import org.springframework.test.util.ReflectionTestUtils;
 
 import java.util.List;
 import java.util.Optional;
@@ -35,6 +36,12 @@ class JobDispatchProcessorTest {
 
     private static final String IMAGE_URL = "https://example.com/image.jpg";
 
+    private Job createJobWithId(Long id) {
+        Job job = Job.create(IMAGE_URL, "hash");
+        ReflectionTestUtils.setField(job, "id", id);
+        return job;
+    }
+
     @Test
     void fetchPendingJobs는_리포지토리에_limit을_전달하고_결과를_반환한다() {
         Job job = Job.create(IMAGE_URL, "hash");
@@ -48,12 +55,12 @@ class JobDispatchProcessorTest {
 
     @Test
     void submitJob_성공_시_잡을_PROCESSING으로_전이하고_workerJobId를_설정한다() {
-        Job job = Job.create(IMAGE_URL, "hash");
-        given(jobRepository.findById(job.getId())).willReturn(Optional.of(job));
+        Job job = createJobWithId(1L);
+        given(jobRepository.findById(1L)).willReturn(Optional.of(job));
         given(mockWorkerClient.submitJob(IMAGE_URL))
                 .willReturn(new MockWorkerClient.ProcessStartResponse("worker-001", "PROCESSING"));
 
-        jobDispatchProcessor.dispatchOne(job.getId());
+        jobDispatchProcessor.dispatchOne(1L);
 
         assertThat(job.getStatus()).isEqualTo(JobStatus.PROCESSING);
         assertThat(job.getWorkerJobId()).isEqualTo("worker-001");
@@ -61,12 +68,12 @@ class JobDispatchProcessorTest {
 
     @Test
     void MockWorkerException_발생_시_잡을_FAILED로_전이하고_errorMessage를_설정한다() {
-        Job job = Job.create(IMAGE_URL, "hash");
-        given(jobRepository.findById(job.getId())).willReturn(Optional.of(job));
+        Job job = createJobWithId(1L);
+        given(jobRepository.findById(1L)).willReturn(Optional.of(job));
         given(mockWorkerClient.submitJob(IMAGE_URL))
                 .willThrow(new MockWorkerException(ErrorCode.MOCK_WORKER_ERROR));
 
-        jobDispatchProcessor.dispatchOne(job.getId());
+        jobDispatchProcessor.dispatchOne(1L);
 
         assertThat(job.getStatus()).isEqualTo(JobStatus.FAILED);
         assertThat(job.getErrorMessage()).isNotNull();
@@ -84,11 +91,11 @@ class JobDispatchProcessorTest {
 
     @Test
     void 잡이_이미_PROCESSING_상태이면_submitJob을_호출하지_않는다() {
-        Job job = Job.create(IMAGE_URL, "hash");
+        Job job = createJobWithId(1L);
         job.markProcessing("worker-existing");
-        given(jobRepository.findById(job.getId())).willReturn(Optional.of(job));
+        given(jobRepository.findById(1L)).willReturn(Optional.of(job));
 
-        jobDispatchProcessor.dispatchOne(job.getId());
+        jobDispatchProcessor.dispatchOne(1L);
 
         verify(mockWorkerClient, never()).submitJob(any());
         assertThat(job.getStatus()).isEqualTo(JobStatus.PROCESSING);
@@ -96,12 +103,12 @@ class JobDispatchProcessorTest {
 
     @Test
     void 잡이_이미_COMPLETED_상태이면_submitJob을_호출하지_않는다() {
-        Job job = Job.create(IMAGE_URL, "hash");
+        Job job = createJobWithId(1L);
         job.markProcessing("worker-existing");
         job.markCompleted("{\"score\":0.9}");
-        given(jobRepository.findById(job.getId())).willReturn(Optional.of(job));
+        given(jobRepository.findById(1L)).willReturn(Optional.of(job));
 
-        jobDispatchProcessor.dispatchOne(job.getId());
+        jobDispatchProcessor.dispatchOne(1L);
 
         verify(mockWorkerClient, never()).submitJob(any());
         assertThat(job.getStatus()).isEqualTo(JobStatus.COMPLETED);

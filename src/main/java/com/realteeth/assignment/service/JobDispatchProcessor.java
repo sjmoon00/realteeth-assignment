@@ -29,22 +29,22 @@ public class JobDispatchProcessor {
     }
 
     @Transactional(propagation = Propagation.REQUIRES_NEW)
-    public void dispatchOne(Long jobId) {
-        Job job = jobRepository.findById(jobId)
+    public void dispatchOne(Long id) {
+        Job job = jobRepository.findById(id)
                 .orElseThrow(() -> new JobException(ErrorCode.JOB_NOT_FOUND));
 
         if (job.getStatus() != JobStatus.PENDING) {
-            log.info("잡이 이미 PENDING이 아님, 스킵 (id={}, status={})", jobId, job.getStatus());
+            log.info("잡이 이미 PENDING이 아님, 스킵 (id={}, status={})", id, job.getStatus());
             return;
         }
 
         try {
             MockWorkerClient.ProcessStartResponse response = mockWorkerClient.submitJob(job.getImageUrl());
             job.markProcessing(response.jobId());
-            log.info("잡 디스패치 성공 (jobId={}, workerJobId={})", job.getJobId(), response.jobId());
+            log.info("잡 디스패치 성공 (id={}, jobId={}, workerJobId={})", id, job.getJobId(), response.jobId());
         } catch (MockWorkerException e) {
             job.markFailed(e.getMessage());
-            log.warn("잡 디스패치 실패 (jobId={}): {}", job.getJobId(), e.getMessage());
+            log.warn("잡 디스패치 실패 (id={}, jobId={}): {}", id, job.getJobId(), e.getMessage());
         }
     }
 }
