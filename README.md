@@ -103,14 +103,14 @@ GET /api/v1/jobs?status={status}&page={page}&size={size}
 
 ```mermaid
 flowchart LR
-    Client["클라이언트"] -->|POST /api/v1/jobs| App["Spring Boot"]
-    App -->|INSERT PENDING| DB["MySQL<br/>jobs 테이블"]
-    DB -->|3초 주기 폴링| Dispatcher["JobDispatcher"]
-    Dispatcher -->|POST /mock/process| Worker["Mock Worker"]
-    Dispatcher -->|PENDING → PROCESSING| DB
-    DB -->|5초 주기 폴링| Poller["JobPoller"]
-    Poller -->|GET /mock/process/{id}| Worker
-    Poller -->|PROCESSING → COMPLETED/FAILED| DB
+    Client["클라이언트"] -->|"POST /api/v1/jobs"| App["Spring Boot"]
+    App -->|"INSERT PENDING"| DB["MySQL<br/>jobs 테이블"]
+    DB -->|"3초 주기 폴링"| Dispatcher["JobDispatcher"]
+    Dispatcher -->|"POST /mock/process"| Worker["Mock Worker"]
+    Dispatcher -->|"PENDING → PROCESSING"| DB
+    DB -->|"5초 주기 폴링"| Poller["JobPoller"]
+    Poller -->|"GET /mock/process/{id}"| Worker
+    Poller -->|"PROCESSING → COMPLETED/FAILED"| DB
 ```
 
 `jobs` 테이블이 메시지 큐 역할을 합니다. 별도의 메시지 브로커(Redis, RabbitMQ 등) 없이 MySQL만으로 비동기 처리 파이프라인을 구성했습니다.
