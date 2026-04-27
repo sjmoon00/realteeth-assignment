@@ -17,6 +17,9 @@ spring:
 scheduling:
   enabled: true
 
+dispatch:
+  batch-size: 10
+
 mock-worker:
   base-url: https://dev.realteeth.ai/mock
   candidate-name: ${MOCK_WORKER_CANDIDATE_NAME}
