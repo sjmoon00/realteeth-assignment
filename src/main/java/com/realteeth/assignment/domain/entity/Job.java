@@ -1,6 +1,8 @@
 package com.realteeth.assignment.domain.entity;
 
 import com.realteeth.assignment.domain.enums.JobStatus;
+import com.realteeth.assignment.exception.ErrorCode;
+import com.realteeth.assignment.exception.JobException;
 import jakarta.persistence.*;
 import lombok.AccessLevel;
 import lombok.Getter;
@@ -78,5 +80,13 @@ public class Job {
     public void markFailed(String errorMessage) {
         this.status = this.status.transitionTo(JobStatus.FAILED);
         this.errorMessage = errorMessage;
+    }
+
+    public void resetToPending() {
+        if (this.status != JobStatus.PROCESSING) {
+            throw new JobException(ErrorCode.INVALID_STATE_TRANSITION);
+        }
+        this.status = JobStatus.PENDING;
+        this.workerJobId = null;
     }
 }

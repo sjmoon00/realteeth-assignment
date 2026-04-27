@@ -100,4 +100,43 @@ class JobTest {
         assertThatThrownBy(() -> job.markProcessing("worker-job-002"))
                 .isInstanceOf(JobException.class);
     }
+
+    @Test
+    void resetToPending은_PROCESSING_상태에서_PENDING으로_전이하고_workerJobId를_초기화한다() {
+        Job job = Job.create("https://example.com/image.jpg", "abc123hash");
+        job.markProcessing("worker-job-001");
+
+        job.resetToPending();
+
+        assertThat(job.getStatus()).isEqualTo(JobStatus.PENDING);
+        assertThat(job.getWorkerJobId()).isNull();
+    }
+
+    @Test
+    void resetToPending은_PENDING_상태에서_호출_시_예외가_발생한다() {
+        Job job = Job.create("https://example.com/image.jpg", "abc123hash");
+
+        assertThatThrownBy(job::resetToPending)
+                .isInstanceOf(JobException.class);
+    }
+
+    @Test
+    void resetToPending은_COMPLETED_상태에서_호출_시_예외가_발생한다() {
+        Job job = Job.create("https://example.com/image.jpg", "abc123hash");
+        job.markProcessing("worker-job-001");
+        job.markCompleted("result");
+
+        assertThatThrownBy(job::resetToPending)
+                .isInstanceOf(JobException.class);
+    }
+
+    @Test
+    void resetToPending은_FAILED_상태에서_호출_시_예외가_발생한다() {
+        Job job = Job.create("https://example.com/image.jpg", "abc123hash");
+        job.markProcessing("worker-job-001");
+        job.markFailed("error");
+
+        assertThatThrownBy(job::resetToPending)
+                .isInstanceOf(JobException.class);
+    }
 }
