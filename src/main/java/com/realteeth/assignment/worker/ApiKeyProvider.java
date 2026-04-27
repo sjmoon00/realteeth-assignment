@@ -4,6 +4,7 @@ import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.boot.context.event.ApplicationReadyEvent;
 import org.springframework.context.event.EventListener;
+import org.springframework.core.annotation.Order;
 import org.springframework.stereotype.Component;
 import org.springframework.web.reactive.function.client.WebClient;
 
@@ -19,6 +20,7 @@ public class ApiKeyProvider {
     private volatile String apiKey;
 
     @EventListener(ApplicationReadyEvent.class)
+    @Order(1)
     public void issueApiKey() {
         WebClient client = webClientBuilder
                 .baseUrl(properties.getBaseUrl())
