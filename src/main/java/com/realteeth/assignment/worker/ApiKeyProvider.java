@@ -1,14 +1,14 @@
 package com.realteeth.assignment.worker;
 
+import java.time.Duration;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.boot.context.event.ApplicationReadyEvent;
 import org.springframework.context.event.EventListener;
 import org.springframework.core.annotation.Order;
+import org.springframework.http.MediaType;
 import org.springframework.stereotype.Component;
 import org.springframework.web.reactive.function.client.WebClient;
-
-import java.time.Duration;
 
 @Slf4j
 @Component
@@ -28,6 +28,7 @@ public class ApiKeyProvider {
 
         AuthResponse response = client.post()
                 .uri("/auth/issue-key")
+                .contentType(MediaType.APPLICATION_JSON)
                 .bodyValue(new IssueKeyRequest(properties.getCandidateName(), properties.getEmail()))
                 .retrieve()
                 .bodyToMono(AuthResponse.class)

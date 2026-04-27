@@ -1,18 +1,19 @@
 package com.realteeth.assignment.worker;
 
+import com.fasterxml.jackson.annotation.JsonProperty;
 import com.realteeth.assignment.exception.ErrorCode;
 import com.realteeth.assignment.exception.MockWorkerException;
 import io.github.resilience4j.circuitbreaker.annotation.CircuitBreaker;
 import jakarta.annotation.PostConstruct;
+import java.time.Duration;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.http.HttpStatusCode;
+import org.springframework.http.MediaType;
 import org.springframework.stereotype.Service;
 import org.springframework.web.reactive.function.client.WebClient;
 import org.springframework.web.reactive.function.client.WebClientRequestException;
 import reactor.core.publisher.Mono;
 import reactor.util.retry.Retry;
-
-import java.time.Duration;
 
 @Slf4j
 @Service
@@ -39,11 +40,14 @@ public class MockWorkerClient {
         this.webClient = webClientBuilder.build();
     }
 
-    public record ProcessStartResponse(String jobId, String status) {}
+    public record ProcessStartResponse(String jobId, String status) {
+    }
 
-    public record ProcessStatusResponse(String jobId, String status, String result) {}
+    public record ProcessStatusResponse(String jobId, String status, String result) {
+    }
 
-    private record SubmitRequest(String imageUrl) {}
+    private record SubmitRequest(@JsonProperty("imageUrl") String imageUrl) {
+    }
 
     private static class RetryableException extends RuntimeException {
         RetryableException(String message, Throwable cause) {
@@ -56,6 +60,7 @@ public class MockWorkerClient {
         return client()
                 .post()
                 .uri("/process")
+                .contentType(MediaType.APPLICATION_JSON)
                 .bodyValue(new SubmitRequest(imageUrl))
                 .retrieve()
                 .onStatus(HttpStatusCode::is4xxClientError, response -> {
@@ -106,13 +111,17 @@ public class MockWorkerClient {
 
     private ProcessStartResponse submitJobFallback(String imageUrl, Throwable t) {
         log.warn("MockWorker submitJob fallback 실행: {}", t.getMessage());
-        if (t instanceof MockWorkerException e) throw e;
+        if (t instanceof MockWorkerException e) {
+            throw e;
+        }
         throw new MockWorkerException(ErrorCode.MOCK_WORKER_ERROR, t);
     }
 
     private ProcessStatusResponse getJobStatusFallback(String workerJobId, Throwable t) {
         log.warn("MockWorker getJobStatus fallback 실행: {}", t.getMessage());
-        if (t instanceof MockWorkerException e) throw e;
+        if (t instanceof MockWorkerException e) {
+            throw e;
+        }
         throw new MockWorkerException(ErrorCode.MOCK_WORKER_ERROR, t);
     }
 
