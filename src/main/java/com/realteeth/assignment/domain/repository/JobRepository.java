@@ -29,9 +29,13 @@ public interface JobRepository extends JpaRepository<Job, Long> {
             LIMIT :limit
             FOR UPDATE SKIP LOCKED
             """, nativeQuery = true)
-    List<Job> findPendingJobsForUpdate(@Param("status") String status, @Param("limit") int limit);
+    List<Job> findJobsByStatusForUpdate(@Param("status") String status, @Param("limit") int limit);
 
     default List<Job> findPendingJobsForUpdate(int limit) {
-        return findPendingJobsForUpdate(JobStatus.PENDING.name(), limit);
+        return findJobsByStatusForUpdate(JobStatus.PENDING.name(), limit);
+    }
+
+    default List<Job> findProcessingJobsForUpdate(int limit) {
+        return findJobsByStatusForUpdate(JobStatus.PROCESSING.name(), limit);
     }
 }

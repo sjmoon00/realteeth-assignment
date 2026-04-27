@@ -12,21 +12,21 @@ import java.util.List;
 @Slf4j
 @Service
 @RequiredArgsConstructor
-public class JobDispatcher {
+public class JobPoller {
 
-    private final JobDispatchProcessor jobDispatchProcessor;
+    private final JobPollProcessor jobPollProcessor;
 
-    @Value("${dispatch.batch-size:10}")
+    @Value("${polling.batch-size:10}")
     private int batchSize;
 
-    @Scheduled(fixedDelay = 3000)
-    public void dispatch() {
-        List<Job> pendingJobs = jobDispatchProcessor.fetchPendingJobs(batchSize);
-        for (Job job : pendingJobs) {
+    @Scheduled(fixedDelay = 5000)
+    public void poll() {
+        List<Job> processingJobs = jobPollProcessor.fetchProcessingJobs(batchSize);
+        for (Job job : processingJobs) {
             try {
-                jobDispatchProcessor.dispatchOne(job.getId());
+                jobPollProcessor.pollOne(job.getId());
             } catch (Exception e) {
-                log.error("잡 디스패치 중 예외 발생 (id={}, jobId={}): {}", job.getId(), job.getJobId(), e.getMessage(), e);
+                log.error("잡 폴링 중 예외 발생 (id={}, jobId={}): {}", job.getId(), job.getJobId(), e.getMessage(), e);
             }
         }
     }
