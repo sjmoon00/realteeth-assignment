@@ -29,16 +29,22 @@ class JobDispatcherTest {
         ReflectionTestUtils.setField(jobDispatcher, "batchSize", 10);
     }
 
+    private Job createJobWithId(String imageUrl, String hash, Long id) {
+        Job job = Job.create(imageUrl, hash);
+        ReflectionTestUtils.setField(job, "id", id);
+        return job;
+    }
+
     @Test
     void PENDING_잡이_있으면_각각_dispatchOne을_호출한다() {
-        Job job1 = Job.create("https://example.com/a.jpg", "hash1");
-        Job job2 = Job.create("https://example.com/b.jpg", "hash2");
+        Job job1 = createJobWithId("https://example.com/a.jpg", "hash1", 1L);
+        Job job2 = createJobWithId("https://example.com/b.jpg", "hash2", 2L);
         given(jobDispatchProcessor.fetchPendingJobs(10)).willReturn(List.of(job1, job2));
 
         jobDispatcher.dispatch();
 
-        verify(jobDispatchProcessor).dispatchOne(job1.getId());
-        verify(jobDispatchProcessor).dispatchOne(job2.getId());
+        verify(jobDispatchProcessor).dispatchOne(1L);
+        verify(jobDispatchProcessor).dispatchOne(2L);
     }
 
     @Test
@@ -52,14 +58,14 @@ class JobDispatcherTest {
 
     @Test
     void dispatchOne에서_예외가_발생해도_다음_잡_처리를_계속한다() {
-        Job job1 = Job.create("https://example.com/a.jpg", "hash1");
-        Job job2 = Job.create("https://example.com/b.jpg", "hash2");
+        Job job1 = createJobWithId("https://example.com/a.jpg", "hash1", 1L);
+        Job job2 = createJobWithId("https://example.com/b.jpg", "hash2", 2L);
         given(jobDispatchProcessor.fetchPendingJobs(10)).willReturn(List.of(job1, job2));
-        doThrow(new RuntimeException("디스패치 실패")).when(jobDispatchProcessor).dispatchOne(job1.getId());
+        doThrow(new RuntimeException("디스패치 실패")).when(jobDispatchProcessor).dispatchOne(1L);
 
         jobDispatcher.dispatch();
 
-        verify(jobDispatchProcessor).dispatchOne(job1.getId());
-        verify(jobDispatchProcessor).dispatchOne(job2.getId());
+        verify(jobDispatchProcessor).dispatchOne(1L);
+        verify(jobDispatchProcessor).dispatchOne(2L);
     }
 }
