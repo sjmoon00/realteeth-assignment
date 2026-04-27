@@ -12,6 +12,7 @@ import org.springframework.test.util.ReflectionTestUtils;
 import java.util.List;
 
 import static org.mockito.ArgumentMatchers.anyInt;
+import static org.mockito.ArgumentMatchers.anyLong;
 import static org.mockito.BDDMockito.given;
 import static org.mockito.Mockito.*;
 
@@ -53,7 +54,7 @@ class JobDispatcherTest {
 
         jobDispatcher.dispatch();
 
-        verify(jobDispatchProcessor, never()).dispatchOne(any());
+        verify(jobDispatchProcessor, never()).dispatchOne(anyLong());
     }
 
     @Test

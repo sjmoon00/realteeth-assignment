@@ -12,6 +12,7 @@ import org.springframework.test.util.ReflectionTestUtils;
 import java.util.List;
 
 import static org.mockito.ArgumentMatchers.anyInt;
+import static org.mockito.ArgumentMatchers.anyLong;
 import static org.mockito.BDDMockito.given;
 import static org.mockito.Mockito.*;
 
@@ -54,7 +55,7 @@ class JobPollerTest {
 
         jobPoller.poll();
 
-        verify(jobPollProcessor, never()).pollOne(any());
+        verify(jobPollProcessor, never()).pollOne(anyLong());
     }
 
     @Test
