@@ -72,11 +72,13 @@ class JobTest {
     }
 
     @Test
-    void PENDING_상태에서_markFailed_호출_시_예외가_발생한다() {
+    void PENDING_상태에서_markFailed는_FAILED로_전이하고_errorMessage를_설정한다() {
         Job job = Job.create("https://example.com/image.jpg", "abc123hash");
 
-        assertThatThrownBy(() -> job.markFailed("error"))
-                .isInstanceOf(JobException.class);
+        job.markFailed("디스패치 실패");
+
+        assertThat(job.getStatus()).isEqualTo(JobStatus.FAILED);
+        assertThat(job.getErrorMessage()).isEqualTo("디스패치 실패");
     }
 
     @Test

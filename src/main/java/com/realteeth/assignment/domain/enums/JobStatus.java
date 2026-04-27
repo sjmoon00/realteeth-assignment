@@ -10,7 +10,7 @@ public enum JobStatus {
     PENDING {
         @Override
         public Set<JobStatus> allowedNextStates() {
-            return Set.of(PROCESSING);
+            return Set.of(PROCESSING, FAILED);
         }
     },
     PROCESSING {

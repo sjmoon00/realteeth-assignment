@@ -39,11 +39,9 @@ class JobStatusTest {
     }
 
     @Test
-    void PENDING에서_FAILED로_전이하면_예외가_발생한다() {
-        assertThatThrownBy(() -> JobStatus.PENDING.transitionTo(JobStatus.FAILED))
-                .isInstanceOf(JobException.class)
-                .satisfies(e -> assertThat(((JobException) e).getErrorCode())
-                        .isEqualTo(ErrorCode.INVALID_STATE_TRANSITION));
+    void PENDING에서_FAILED로_전이된다() {
+        assertThat(JobStatus.PENDING.transitionTo(JobStatus.FAILED))
+                .isEqualTo(JobStatus.FAILED);
     }
 
     @ParameterizedTest
