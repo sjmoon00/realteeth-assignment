@@ -29,7 +29,7 @@ public class ApiKeyProvider {
             refreshInternal();
             log.info("Mock Worker API Key 발급 완료");
         } catch (Exception e) {
-            log.warn("Mock Worker API Key 발급 실패 — 서버는 정상 기동, 첫 API 호출 시 재시도: {}", e.getMessage());
+            log.warn("Mock Worker API Key 발급 실패 — 서버는 정상 기동, 첫 API 호출 시 재시도", e);
         }
     }
 
@@ -46,7 +46,7 @@ public class ApiKeyProvider {
                 log.info("Mock Worker API Key 재발급 완료");
                 return true;
             } catch (Exception e) {
-                log.warn("Mock Worker API Key 재발급 실패: {}", e.getMessage());
+                log.warn("Mock Worker API Key 재발급 실패", e);
                 return false;
             } finally {
                 refreshLock.unlock();
