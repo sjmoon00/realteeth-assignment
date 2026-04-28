@@ -20,6 +20,7 @@ import java.util.concurrent.TimeUnit;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
+import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
@@ -249,26 +250,26 @@ class MockWorkerClientTest {
                 .setBody("{\"jobId\":\"worker-010\",\"status\":\"PROCESSING\"}")
                 .addHeader("Content-Type", "application/json"));
 
-        when(apiKeyProvider.refresh()).thenReturn(true);
+        when(apiKeyProvider.refresh(any())).thenReturn(true);
         when(apiKeyProvider.getApiKey()).thenReturn("test-api-key", "new-api-key");
 
         MockWorkerClient.ProcessStartResponse response = mockWorkerClient.submitJob("https://example.com/img.jpg");
 
         assertThat(response.jobId()).isEqualTo("worker-010");
         assertThat(server.getRequestCount()).isEqualTo(2);
-        verify(apiKeyProvider).refresh();
+        verify(apiKeyProvider).refresh(any());
     }
 
     @Test
     void submitJob_401_후_재발급_실패시_MockWorkerException이_발생한다() {
         server.enqueue(new MockResponse().setResponseCode(401));
 
-        when(apiKeyProvider.refresh()).thenReturn(false);
+        when(apiKeyProvider.refresh(any())).thenReturn(false);
 
         assertThatThrownBy(() -> mockWorkerClient.submitJob("https://example.com/img.jpg"))
                 .isInstanceOf(MockWorkerException.class);
 
-        verify(apiKeyProvider).refresh();
+        verify(apiKeyProvider).refresh(any());
     }
 
     @Test
@@ -278,18 +279,18 @@ class MockWorkerClientTest {
                 .addHeader("Content-Type", "application/json"));
 
         when(apiKeyProvider.getApiKey()).thenReturn(null, "recovered-key");
-        when(apiKeyProvider.refresh()).thenReturn(true);
+        when(apiKeyProvider.refresh(any())).thenReturn(true);
 
         MockWorkerClient.ProcessStartResponse response = mockWorkerClient.submitJob("https://example.com/img.jpg");
 
         assertThat(response.jobId()).isEqualTo("worker-011");
-        verify(apiKeyProvider).refresh();
+        verify(apiKeyProvider).refresh(any());
     }
 
     @Test
     void submitJob_apiKey가_null이고_refresh도_실패하면_MockWorkerException이_발생한다() {
         when(apiKeyProvider.getApiKey()).thenReturn(null);
-        when(apiKeyProvider.refresh()).thenReturn(false);
+        when(apiKeyProvider.refresh(any())).thenReturn(false);
 
         assertThatThrownBy(() -> mockWorkerClient.submitJob("https://example.com/img.jpg"))
                 .isInstanceOf(MockWorkerException.class);

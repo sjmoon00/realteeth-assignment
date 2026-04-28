@@ -113,7 +113,7 @@ class ApiKeyProviderTest {
                 .setBody("{\"apiKey\":\"new-key-123\"}")
                 .addHeader("Content-Type", "application/json"));
 
-        boolean result = apiKeyProvider.refresh();
+        boolean result = apiKeyProvider.refresh(null);
 
         assertThat(result).isTrue();
         assertThat(apiKeyProvider.getApiKey()).isEqualTo("new-key-123");
@@ -128,7 +128,7 @@ class ApiKeyProviderTest {
 
         server.enqueue(new MockResponse().setResponseCode(500));
 
-        boolean result = apiKeyProvider.refresh();
+        boolean result = apiKeyProvider.refresh("old-key");
 
         assertThat(result).isFalse();
         assertThat(apiKeyProvider.getApiKey()).isEqualTo("old-key");
@@ -142,9 +142,24 @@ class ApiKeyProviderTest {
                 .setBody("{\"apiKey\":\"recovered-key\"}")
                 .addHeader("Content-Type", "application/json"));
 
-        boolean result = apiKeyProvider.refresh();
+        boolean result = apiKeyProvider.refresh(null);
 
         assertThat(result).isTrue();
         assertThat(apiKeyProvider.getApiKey()).isEqualTo("recovered-key");
+    }
+
+    @Test
+    void refresh_이미_다른_스레드가_갱신했으면_재발급_없이_true를_반환한다() {
+        server.enqueue(new MockResponse()
+                .setBody("{\"apiKey\":\"current-key\"}")
+                .addHeader("Content-Type", "application/json"));
+        apiKeyProvider.issueApiKey();
+
+        // expiredKey가 현재 키와 다르면 이미 갱신된 것으로 판단 → 서버 호출 없이 true 반환
+        boolean result = apiKeyProvider.refresh("old-expired-key");
+
+        assertThat(result).isTrue();
+        assertThat(apiKeyProvider.getApiKey()).isEqualTo("current-key");
+        assertThat(server.getRequestCount()).isEqualTo(1); // issueApiKey 1회만
     }
 }
