@@ -76,7 +76,7 @@ public class MockWorkerClient {
             if (apiKeyProvider.refresh(e.getExpiredKey())) {
                 return doSubmitJob(imageUrl);
             }
-            throw new MockWorkerException(ErrorCode.MOCK_WORKER_ERROR);
+            throw new MockWorkerException(ErrorCode.MOCK_WORKER_ERROR, e);
         }
     }
 
@@ -159,11 +159,14 @@ public class MockWorkerClient {
     private String resolveApiKey() {
         String key = apiKeyProvider.getApiKey();
         if (key == null) {
+            log.warn("API Key가 null — 재발급 시도");
             if (!apiKeyProvider.refresh(null)) {
+                log.warn("API Key 재발급 실패");
                 throw new MockWorkerException(ErrorCode.MOCK_WORKER_ERROR);
             }
             key = apiKeyProvider.getApiKey();
             if (key == null) {
+                log.warn("재발급 후에도 API Key가 null");
                 throw new MockWorkerException(ErrorCode.MOCK_WORKER_ERROR);
             }
         }
