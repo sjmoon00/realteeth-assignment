@@ -56,8 +56,15 @@ public class MockWorkerClient {
     }
 
     private static class ApiKeyExpiredException extends RuntimeException {
-        ApiKeyExpiredException() {
+        private final String expiredKey;
+
+        ApiKeyExpiredException(String expiredKey) {
             super("API Key 만료 (401)");
+            this.expiredKey = expiredKey;
+        }
+
+        String getExpiredKey() {
+            return expiredKey;
         }
     }
 
@@ -66,7 +73,7 @@ public class MockWorkerClient {
         try {
             return doSubmitJob(imageUrl);
         } catch (ApiKeyExpiredException e) {
-            if (apiKeyProvider.refresh()) {
+            if (apiKeyProvider.refresh(e.getExpiredKey())) {
                 return doSubmitJob(imageUrl);
             }
             throw new MockWorkerException(ErrorCode.MOCK_WORKER_ERROR);
@@ -116,7 +123,11 @@ public class MockWorkerClient {
     }
 
     private ProcessStartResponse doSubmitJob(String imageUrl) {
-        return authenticatedClient()
+        String currentKey = resolveApiKey();
+        return webClient.mutate()
+                .baseUrl(properties.getBaseUrl())
+                .defaultHeader("X-API-KEY", currentKey)
+                .build()
                 .post()
                 .uri("/process")
                 .contentType(MediaType.APPLICATION_JSON)
@@ -124,7 +135,7 @@ public class MockWorkerClient {
                 .retrieve()
                 .onStatus(HttpStatusCode::is4xxClientError, response -> {
                     if (response.statusCode().value() == 401) {
-                        return Mono.error(new ApiKeyExpiredException());
+                        return Mono.error(new ApiKeyExpiredException(currentKey));
                     }
                     if (response.statusCode().value() == 429) {
                         return Mono.error(new RetryableException("429 Too Many Requests", null));
@@ -145,11 +156,10 @@ public class MockWorkerClient {
                 .block(Duration.ofSeconds(65));
     }
 
-    // POST /mock/process — X-API-KEY 인증 필요
-    private WebClient authenticatedClient() {
+    private String resolveApiKey() {
         String key = apiKeyProvider.getApiKey();
         if (key == null) {
-            if (!apiKeyProvider.refresh()) {
+            if (!apiKeyProvider.refresh(null)) {
                 throw new MockWorkerException(ErrorCode.MOCK_WORKER_ERROR);
             }
             key = apiKeyProvider.getApiKey();
@@ -157,10 +167,7 @@ public class MockWorkerClient {
                 throw new MockWorkerException(ErrorCode.MOCK_WORKER_ERROR);
             }
         }
-        return webClient.mutate()
-                .baseUrl(properties.getBaseUrl())
-                .defaultHeader("X-API-KEY", key)
-                .build();
+        return key;
     }
 
     // GET /mock/process/{id} — 인증 불필요

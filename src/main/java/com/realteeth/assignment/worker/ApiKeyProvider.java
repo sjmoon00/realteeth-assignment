@@ -33,12 +33,15 @@ public class ApiKeyProvider {
         }
     }
 
-    public boolean refresh() {
+    public boolean refresh(String expiredKey) {
         try {
             if (!refreshLock.tryLock(15, TimeUnit.SECONDS)) {
                 return apiKey != null;
             }
             try {
+                if (expiredKey != null && !expiredKey.equals(this.apiKey)) {
+                    return true;
+                }
                 refreshInternal();
                 log.info("Mock Worker API Key 재발급 완료");
                 return true;
